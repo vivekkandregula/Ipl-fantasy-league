@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPL Fantasy League Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Background decorative elements for a premium aesthetic -->
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+
+        <header class="header">
+            <h1>IPL Fantasy <span style="font-weight: 300;">Live</span></h1>
+            <p>Compete with friends using real-world match multipliers!</p>
+            
+            <div style="margin-top: 1.5rem;">
+                <button id="sync-results-btn" class="primary-btn" style="background: rgba(32, 201, 151, 0.15); border: 1px solid #20c997; color: #20c997; font-size: 0.95rem; padding: 0.6rem 1.2rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.4rem; margin-top: -2px;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.92-10.26l3.08-3.08"/></svg>
+                    Sync Latest Results
+                </button>
+                <div id="last-synced-time" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.6rem;"></div>
+            </div>
+        </header>
+
+        <div class="top-grid">
+            <!-- Global Match Breakdown (Now wide table) -->
+            <div class="glass module breakdown-module">
+                <h2>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    Live Match Breakdown
+                </h2>
+                <div class="pulse-indicator" style="position:absolute; right: 2rem; top: 2.2rem;"></div>
+                <div id="breakdown-list" style="overflow-x: auto;">
+                    <!-- Table rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Global Leaderboard -->
+            <div class="glass module leaderboard-module">
+                <h2>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    Global Leaderboard
+                </h2>
+                <p class="subtitle">Ranked by total points</p>
+                <div id="leaderboard-list" class="leaderboard-list">
+                    <!-- Dynamic -->
+                </div>
+            </div>
+        </div>
+
+        <!-- All Squads Overview -->
+        <div class="glass module overview-module" style="margin-bottom: 1.5rem;">
+            <h2>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                All Player Squads
+            </h2>
+            <div id="all-squads-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+                <div class="empty-state">No players added.</div>
+            </div>
+        </div>
+
+        <!-- Squad Manager (Bottom) -->
+        <div class="glass module squad-module">
+            <h2>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                Squad Manager
+            </h2>
+            <p class="subtitle">Add a friend, rank your teams (1st = 8 pts, 10th = -4 pts), and instantly watch the leaderboard jump.</p>
+            
+            <div class="player-management" style="display: flex; gap: 2rem; align-items:flex-start;">
+                <div style="flex: 1;">
+                    <h3>1. Create Player</h3>
+                    <div class="add-player-form">
+                        <input type="text" id="new-player-name" placeholder="Enter player name...">
+                        <button id="add-player-btn" class="secondary-btn">Add</button>
+                    </div>
+                    
+                    <h3 style="margin-top: 1.5rem;">2. Select Player to Edit</h3>
+                    <div class="player-selector-container">
+                        <select id="player-select">
+                            <!-- Dynamic -->
+                        </select>
+                    </div>
+                    <div class="player-actions" style="margin-top: 1rem; display: flex; gap: 0.8rem;">
+                        <button id="rename-player-btn" class="secondary-btn" style="flex:1;">Rename</button>
+                        <button id="delete-player-btn" class="secondary-btn" style="flex:1; border-color: rgba(255,107,107,0.5); color: #ff6b6b;">Delete</button>
+                    </div>
+                </div>
+
+                <div id="ranking-container" style="flex: 2; border-left: 1px solid var(--glass-border); padding-left: 2rem;">
+                    <h3>Ranking for <span id="current-player-name" style="color:var(--accent);"></span></h3>
+                    <div class="points-legend">
+                        <strong>Points Mapping:</strong>
+                        <div class="legend-grid">
+                            <div>1st: <span style="color:#20c997">+8</span></div>
+                            <div>2nd: <span style="color:#20c997">+7</span></div>
+                            <div>3rd: <span style="color:#20c997">+6</span></div>
+                            <div>4th: <span style="color:#20c997">+5</span></div>
+                            <div>5th: <span style="color:#20c997">+4</span></div>
+                            <div>6th: <span style="color:#20c997">+3</span></div>
+                            <div>7th: <span style="color:#20c997">+2</span></div>
+                            <div>8th: <span style="color:#20c997">+1</span></div>
+                            <div>9th: <span style="color:#ff6b6b">-2</span></div>
+                            <div>10th: <span style="color:#ff6b6b">-4</span></div>
+                        </div>
+                    </div>
+                    <div class="acronym-legend" style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+                        <strong>Valid Acronyms:</strong> 
+                        <span style="color:#20c997;">CSK, DC, GT, KKR, LSG, MI, PBKS, RR, RCB, SRH</span>
+                    </div>
+                    
+                    <div style="margin: 1.5rem 0;">
+                        <label for="acronym-input" style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem; display: block;">Enter team order (1st to 10th) separated by commas:</label>
+                        <input type="text" id="acronym-input" style="width: 100%; padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3); color: #fff; font-family: monospace; font-size: 1.1rem; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);" placeholder="e.g. CSK, RCB, MI, GT, SRH, KKR, RR, DC, PBKS, LSG">
+                    </div>
+                    <button id="save-teams-btn" class="primary-btn">Save Player Rankings</button>
+                </div>
+
+        </main>
+    </div>
+
+    <script type="module" src="./main.js"></script>
+</body>
+</html>
