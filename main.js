@@ -1,5 +1,6 @@
 const matchesBody = document.getElementById('matches-body');
 const breakdownList = document.getElementById('breakdown-list');
+const leaderboardList = document.getElementById('leaderboard-list');
 
 // Array where index matches the rank (0 = 1st, 1 = 2nd...)
 const pointsMapping = [8, 7, 6, 5, 4, 3, 2, 1, -2, -4];
