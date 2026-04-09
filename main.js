@@ -1,22 +1,11 @@
 const matchesBody = document.getElementById('matches-body');
-const acronymInput = document.getElementById('acronym-input');
-const saveTeamsBtn = document.getElementById('save-teams-btn');
 const breakdownList = document.getElementById('breakdown-list');
-const breakdownPlayerName = document.getElementById('breakdown-player-name');
-
-const addPlayerBtn = document.getElementById('add-player-btn');
-const newPlayerNameInput = document.getElementById('new-player-name');
-const playerSelect = document.getElementById('player-select');
-const leaderboardList = document.getElementById('leaderboard-list');
-const currentPlayerNameSpan = document.getElementById('current-player-name');
-const rankingContainer = document.getElementById('ranking-container');
 
 // Array where index matches the rank (0 = 1st, 1 = 2nd...)
 const pointsMapping = [8, 7, 6, 5, 4, 3, 2, 1, -2, -4];
 
 let currentMatches = []; 
-let defaultTeams = []; 
-let players = []; // Array of { id, name, rankings: [], score: 0 }
+let defaultTeams = [];
 let selectedPlayerId = null;
 
 const acronymMap = {
@@ -81,125 +70,43 @@ async function fetchInitialData(isManualSync = false) {
 
 // Match Table rendering component removed as layout was changed
 
-async function loadPlayers() {
-    try {
-        const res = await fetch('/api/players');
-        const data = await res.json();
-        
-        if (data.players && Array.isArray(data.players)) {
-            players = data.players;
-        }
-        
-        // Ensure default rankings integrity
-        players.forEach(p => {
-            let list = [...(p.rankings || [])];
-            const missing = defaultTeams.filter(t => !list.includes(t));
-            list = [...list.filter(t => defaultTeams.includes(t)), ...missing];
-            p.rankings = list;
-        });
-
-        updatePlayerSelectors();
-        calculateAllScores();
-        renderLeaderboard();
-        
-        if(players.length > 0) {
-            if(!selectedPlayerId || !players.find(p => p.id === selectedPlayerId)){
-                selectPlayer(players[0].id);
-            } else {
-                selectPlayer(selectedPlayerId);
-            }
-        } else {
-            selectedPlayerId = null;
-            if(currentPlayerNameSpan) currentPlayerNameSpan.textContent = '';
-            if(document.getElementById('acronym-input')) document.getElementById('acronym-input').value = '';
-        }
-        
-        renderBreakdown(); // Show global breakdown immediately
-        renderAllSquads(); // Show squads dashboard
-    } catch (err) {
-        console.error("Failed to load players from backend:", err);
-    }
-}
-
-async function savePlayers() {
-    try {
-        await fetch('/api/players', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ players: players })
-        });
-    } catch (err) {
-        console.error("Failed to save players to backend:", err);
-    }
-}
-
-async function addPlayer() {
-    const name = newPlayerNameInput.value.trim();
-    if (!name) return;
-    
-    const baseRankings = [...defaultTeams].sort((a,b) => a.localeCompare(b));
-    
-    const newPlayer = {
-        id: Date.now().toString(),
-        name: name,
-        rankings: baseRankings,
+// Hardcoded Player State
+const players = [
+    {
+        id: "1",
+        name: "Goutham",
+        rankings: ['Sunrisers Hyderabad', 'Delhi Capitals', 'Mumbai Indians', 'Gujarat Titans', 'Punjab Kings', 'Royal Challengers Bengaluru', 'Chennai Super Kings', 'Kolkata Knight Riders', 'Rajasthan Royals', 'Lucknow Super Giants'],
         score: 0,
         lastUpdatedAt: new Date().toISOString()
-    };
-    
-    players.push(newPlayer);
-    await savePlayers();
-    newPlayerNameInput.value = '';
-    
-    updatePlayerSelectors();
-    selectPlayer(newPlayer.id);
+    },
+    {
+        id: "2",
+        name: "Gayathri",
+        rankings: ['Mumbai Indians', 'Royal Challengers Bengaluru', 'Sunrisers Hyderabad', 'Delhi Capitals', 'Gujarat Titans', 'Rajasthan Royals', 'Chennai Super Kings', 'Punjab Kings', 'Kolkata Knight Riders', 'Lucknow Super Giants'],
+        score: 0,
+        lastUpdatedAt: new Date().toISOString()
+    },
+    {
+        id: "3",
+        name: "Yashwanth",
+        rankings: ['Sunrisers Hyderabad', 'Rajasthan Royals', 'Mumbai Indians', 'Chennai Super Kings', 'Kolkata Knight Riders', 'Royal Challengers Bengaluru', 'Gujarat Titans', 'Punjab Kings', 'Delhi Capitals', 'Lucknow Super Giants'],
+        score: 0,
+        lastUpdatedAt: new Date().toISOString()
+    },
+    {
+        id: "4",
+        name: "Vivek",
+        rankings: ['Sunrisers Hyderabad', 'Mumbai Indians', 'Chennai Super Kings', 'Punjab Kings', 'Kolkata Knight Riders', 'Royal Challengers Bengaluru', 'Gujarat Titans', 'Delhi Capitals', 'Lucknow Super Giants', 'Rajasthan Royals'],
+        score: 0,
+        lastUpdatedAt: new Date().toISOString()
+    }
+];
+
+function loadPlayers() {
     calculateAllScores();
     renderLeaderboard();
-    renderBreakdown();
+    renderBreakdown(); 
     renderAllSquads();
-}
-
-function updatePlayerSelectors() {
-    playerSelect.innerHTML = '';
-    if (players.length === 0) {
-        const opt = document.createElement('option');
-        opt.value = "";
-        opt.textContent = "No players added...";
-        playerSelect.appendChild(opt);
-        rankingContainer.style.opacity = '0.5';
-        rankingContainer.style.pointerEvents = 'none';
-        return;
-    }
-    
-    rankingContainer.style.opacity = '1';
-    rankingContainer.style.pointerEvents = 'auto';
-
-    players.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = p.name;
-        playerSelect.appendChild(opt);
-    });
-}
-
-function selectPlayer(id) {
-    if (!id) return;
-    selectedPlayerId = id;
-    playerSelect.value = id;
-    
-    const player = players.find(p => p.id === id);
-    if (player) {
-        currentPlayerNameSpan.textContent = player.name;
-        renderAcronymInput(player.rankings);
-        highlightLeaderboardActive(id);
-    }
-}
-
-function renderAcronymInput(teamNamesArray) {
-    const acronyms = teamNamesArray.map(name => getAcronym(name)).join(', ');
-    if (acronymInput) {
-        acronymInput.value = acronyms;
-    }
 }
 
 function calculateAllScores() {
@@ -362,95 +269,6 @@ function renderBreakdown() {
     breakdownList.innerHTML = tableHtml;
 }
 
-// (Drag and drop logic removed)
-
-// Event Listeners
-addPlayerBtn.addEventListener('click', addPlayer);
-newPlayerNameInput.addEventListener('keypress', (e) => {
-    if(e.key === 'Enter') addPlayer();
-});
-
-playerSelect.addEventListener('change', (e) => {
-    selectPlayer(e.target.value);
-});
-
-document.getElementById('rename-player-btn').addEventListener('click', async () => {
-    if (!selectedPlayerId) return;
-    const player = players.find(p => p.id === selectedPlayerId);
-    if(player) {
-        const newName = prompt("Enter new name for " + player.name + ":", player.name);
-        if(newName && newName.trim() !== "") {
-            player.name = newName.trim();
-            await savePlayers();
-            // Re-render components that show names
-            updatePlayerSelectors();
-            playerSelect.value = selectedPlayerId;
-            currentPlayerNameSpan.textContent = player.name;
-            renderLeaderboard();
-            renderBreakdown();
-            renderAllSquads();
-        }
-    }
-});
-
-document.getElementById('delete-player-btn').addEventListener('click', async () => {
-    if (!selectedPlayerId) return;
-    const player = players.find(p => p.id === selectedPlayerId);
-    if(player) {
-        if(confirm(`Are you sure you want to permanently delete ${player.name}?`)) {
-            players = players.filter(p => p.id !== selectedPlayerId);
-            await savePlayers();
-            await loadPlayers(); // Full reload from backend to clear out IDs, update UI completely
-        }
-    }
-});
-
-saveTeamsBtn.addEventListener('click', async () => {
-    if (!selectedPlayerId) return;
-    const player = players.find(p => p.id === selectedPlayerId);
-    if(player) {
-        if (!acronymInput) return;
-        
-        const rawInput = acronymInput.value;
-        const parts = rawInput.split(',').map(s => s.trim().toUpperCase()).filter(s => s);
-        
-        if (parts.length !== 10) {
-            alert('Please provide exactly 10 team acronyms separated by commas.');
-            return;
-        }
-        
-        const validKeys = Object.keys(acronymMap);
-        const mappedTeams = [];
-        for (let i = 0; i < parts.length; i++) {
-            if (!validKeys.includes(parts[i])) {
-                alert(`Invalid acronym found: ${parts[i]}`);
-                return;
-            }
-            if (mappedTeams.includes(acronymMap[parts[i]])) {
-                alert(`Duplicate acronym found: ${parts[i]}`);
-                return;
-            }
-            mappedTeams.push(acronymMap[parts[i]]);
-        }
-
-        player.rankings = mappedTeams;
-        player.lastUpdatedAt = new Date().toISOString();
-        await savePlayers();
-        calculateAllScores();
-        renderLeaderboard();
-        renderBreakdown();
-        renderAllSquads();
-        
-        const btnText = saveTeamsBtn.textContent;
-        saveTeamsBtn.textContent = 'Saved!';
-        saveTeamsBtn.style.background = '#20c997';
-        setTimeout(() => {
-            saveTeamsBtn.textContent = btnText;
-            saveTeamsBtn.style.background = '';
-        }, 1500);
-    }
-});
-
 const syncBtn = document.getElementById('sync-results-btn');
 if(syncBtn) {
     syncBtn.addEventListener('click', () => {
@@ -480,4 +298,6 @@ function checkAutoSync() {
 setInterval(checkAutoSync, 60000);
 
 // Init
-document.addEventListener('DOMContentLoaded', fetchInitialData);
+document.addEventListener('DOMContentLoaded', () => {
+    fetchInitialData();
+});

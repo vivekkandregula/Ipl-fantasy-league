@@ -2,18 +2,14 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const cheerio = require('cheerio');
-const fs = require('fs');
-const path = require('path');
 
 const app = express();
 app.use(cors());
-app.use(express.json()); // Enable JSON body parsing
 
 // Serve production static files
 app.use(express.static('dist'));
 
 const PORT = process.env.PORT || 3000;
-const PLAYERS_FILE = path.join(__dirname, 'players.json');
 
 const mockMatches = [
     { team1: "Chennai Super Kings", team2: "Royal Challengers Bengaluru", winner: "Chennai Super Kings", status: "completed" },
@@ -94,34 +90,7 @@ app.get('/api/teams', (req, res) => {
     });
 });
 
-// Player Backend Handlers
-app.get('/api/players', (req, res) => {
-    try {
-        if (fs.existsSync(PLAYERS_FILE)) {
-            const data = fs.readFileSync(PLAYERS_FILE, 'utf8');
-            res.json({ players: JSON.parse(data) });
-        } else {
-            res.json({ players: [] });
-        }
-    } catch (err) {
-        console.error("Failed to read players file:", err);
-        res.status(500).json({ error: 'Failed to read players data.' });
-    }
-});
-
-app.post('/api/players', (req, res) => {
-    try {
-        const players = req.body.players;
-        if (!Array.isArray(players)) {
-            return res.status(400).json({ error: 'Invalid payload: players must be an array.' });
-        }
-        fs.writeFileSync(PLAYERS_FILE, JSON.stringify(players, null, 2), 'utf8');
-        res.json({ success: true });
-    } catch (err) {
-        console.error("Failed to write players file:", err);
-        res.status(500).json({ error: 'Failed to save players data.' });
-    }
-});
+// Dynamic player endpoints removed for Stateless Architecture
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

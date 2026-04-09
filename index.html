@@ -66,64 +66,6 @@
             </div>
         </div>
 
-        <!-- Squad Manager (Bottom) -->
-        <div class="glass module squad-module">
-            <h2>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                Squad Manager
-            </h2>
-            <p class="subtitle">Add a friend, rank your teams (1st = 8 pts, 10th = -4 pts), and instantly watch the leaderboard jump.</p>
-            
-            <div class="player-management" style="display: flex; gap: 2rem; align-items:flex-start;">
-                <div style="flex: 1;">
-                    <h3>1. Create Player</h3>
-                    <div class="add-player-form">
-                        <input type="text" id="new-player-name" placeholder="Enter player name...">
-                        <button id="add-player-btn" class="secondary-btn">Add</button>
-                    </div>
-                    
-                    <h3 style="margin-top: 1.5rem;">2. Select Player to Edit</h3>
-                    <div class="player-selector-container">
-                        <select id="player-select">
-                            <!-- Dynamic -->
-                        </select>
-                    </div>
-                    <div class="player-actions" style="margin-top: 1rem; display: flex; gap: 0.8rem;">
-                        <button id="rename-player-btn" class="secondary-btn" style="flex:1;">Rename</button>
-                        <button id="delete-player-btn" class="secondary-btn" style="flex:1; border-color: rgba(255,107,107,0.5); color: #ff6b6b;">Delete</button>
-                    </div>
-                </div>
-
-                <div id="ranking-container" style="flex: 2; border-left: 1px solid var(--glass-border); padding-left: 2rem;">
-                    <h3>Ranking for <span id="current-player-name" style="color:var(--accent);"></span></h3>
-                    <div class="points-legend">
-                        <strong>Points Mapping:</strong>
-                        <div class="legend-grid">
-                            <div>1st: <span style="color:#20c997">+8</span></div>
-                            <div>2nd: <span style="color:#20c997">+7</span></div>
-                            <div>3rd: <span style="color:#20c997">+6</span></div>
-                            <div>4th: <span style="color:#20c997">+5</span></div>
-                            <div>5th: <span style="color:#20c997">+4</span></div>
-                            <div>6th: <span style="color:#20c997">+3</span></div>
-                            <div>7th: <span style="color:#20c997">+2</span></div>
-                            <div>8th: <span style="color:#20c997">+1</span></div>
-                            <div>9th: <span style="color:#ff6b6b">-2</span></div>
-                            <div>10th: <span style="color:#ff6b6b">-4</span></div>
-                        </div>
-                    </div>
-                    <div class="acronym-legend" style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
-                        <strong>Valid Acronyms:</strong> 
-                        <span style="color:#20c997;">CSK, DC, GT, KKR, LSG, MI, PBKS, RR, RCB, SRH</span>
-                    </div>
-                    
-                    <div style="margin: 1.5rem 0;">
-                        <label for="acronym-input" style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem; display: block;">Enter team order (1st to 10th) separated by commas:</label>
-                        <input type="text" id="acronym-input" style="width: 100%; padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3); color: #fff; font-family: monospace; font-size: 1.1rem; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);" placeholder="e.g. CSK, RCB, MI, GT, SRH, KKR, RR, DC, PBKS, LSG">
-                    </div>
-                    <button id="save-teams-btn" class="primary-btn">Save Player Rankings</button>
-                </div>
-
-        </main>
     </div>
 
     <script type="module" src="./main.js"></script>
