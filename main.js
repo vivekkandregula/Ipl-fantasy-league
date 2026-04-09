@@ -36,8 +36,11 @@ async function fetchInitialData(isManualSync = false) {
         
         const [teamsRes, matchesRes] = await Promise.all([
             fetch('/api/teams'),
-            fetch('/api/matches')
+            fetch('/api/matches', { cache: 'no-store' }) // Force bypassing cache which might cause CORS aborts on Render
         ]);
+        
+        if (!teamsRes.ok) throw new Error(`Teams endpoint failed: ${teamsRes.status}`);
+        if (!matchesRes.ok) throw new Error(`Matches endpoint failed: ${matchesRes.status}`);
         
         const teamsResult = await teamsRes.json();
         const matchesResult = await matchesRes.json();
@@ -57,13 +60,15 @@ async function fetchInitialData(isManualSync = false) {
             btn.style.opacity = '1';
         }
     } catch (error) {
-        console.error("Error fetching live data", error);
-        alert('Failed to fetch the latest match data from the backend.');
+        console.error("Error fetching live data:", error);
+        alert(`Sync crashed: ${error.message}`);
+        
         if(isManualSync) {
             const btn = document.getElementById('sync-results-btn');
             if(btn) {
-                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 0.4rem; margin-top: -2px;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.92-10.26l3.08-3.08"/></svg> Sync Latest Results';
+                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 0.4rem; margin-top: -2px;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.92-10.26l3.08-3.08"/></svg> Sync Failed';
                 btn.style.opacity = '1';
+                btn.style.color = '#ff6b6b';
             }
         }
     }
@@ -139,8 +144,7 @@ function renderLeaderboard() {
     
     players.forEach((p, index) => {
         const div = document.createElement('div');
-        div.className = `leaderboard-item ${p.id === selectedPlayerId ? 'active' : ''}`;
-        div.onclick = () => selectPlayer(p.id);
+        div.className = `leaderboard-item`;
         
         let medal = '';
         if(index === 0) medal = '🥇 ';
@@ -192,10 +196,6 @@ function renderAllSquads() {
     });
 }
 
-function highlightLeaderboardActive(id) {
-    document.querySelectorAll('.leaderboard-item').forEach(el => el.classList.remove('active'));
-    renderLeaderboard();
-}
 
 function renderBreakdown() {
     breakdownList.innerHTML = '';
