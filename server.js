@@ -12,12 +12,26 @@ app.use(express.static('dist'));
 const PORT = process.env.PORT || 3000;
 
 const mockMatches = [
-    { team1: "Chennai Super Kings", team2: "Royal Challengers Bengaluru", winner: "Chennai Super Kings", status: "completed" },
-    { team1: "Punjab Kings", team2: "Delhi Capitals", winner: "Punjab Kings", status: "completed" },
-    { team1: "Kolkata Knight Riders", team2: "Sunrisers Hyderabad", winner: "Kolkata Knight Riders", status: "completed" },
+    { team1: "Sunrisers Hyderabad", team2: "Royal Challengers Bengaluru", winner: "Royal Challengers Bengaluru", status: "completed" },
+    { team1: "Kolkata Knight Riders", team2: "Mumbai Indians", winner: "Mumbai Indians", status: "completed" },
+    { team1: "Chennai Super Kings", team2: "Gujarat Titans", winner: "Chennai Super Kings", status: "completed" },
     { team1: "Rajasthan Royals", team2: "Lucknow Super Giants", winner: "Rajasthan Royals", status: "completed" },
-    { team1: "Gujarat Titans", team2: "Mumbai Indians", winner: "Gujarat Titans", status: "completed" },
-    { team1: "Sunrisers Hyderabad", team2: "Rajasthan Royals", winner: "None", status: "no_result" }
+    { team1: "Delhi Capitals", team2: "Punjab Kings", winner: "Punjab Kings", status: "completed" },
+    { team1: "Royal Challengers Bengaluru", team2: "Punjab Kings", winner: "Royal Challengers Bengaluru", status: "completed" },
+    { team1: "Chennai Super Kings", team2: "Gujarat Titans", winner: "Chennai Super Kings", status: "completed" },
+    { team1: "Sunrisers Hyderabad", team2: "Mumbai Indians", winner: "Sunrisers Hyderabad", status: "completed" },
+    { team1: "Rajasthan Royals", team2: "Delhi Capitals", winner: "Rajasthan Royals", status: "completed" },
+    { team1: "Royal Challengers Bengaluru", team2: "Kolkata Knight Riders", winner: "Kolkata Knight Riders", status: "completed" },
+    { team1: "Lucknow Super Giants", team2: "Punjab Kings", winner: "Lucknow Super Giants", status: "completed" },
+    { team1: "Gujarat Titans", team2: "Sunrisers Hyderabad", winner: "Gujarat Titans", status: "completed" },
+    { team1: "Delhi Capitals", team2: "Chennai Super Kings", winner: "Delhi Capitals", status: "completed" },
+    { team1: "Mumbai Indians", team2: "Rajasthan Royals", winner: "Rajasthan Royals", status: "completed" },
+    { team1: "Royal Challengers Bengaluru", team2: "Lucknow Super Giants", winner: "Royal Challengers Bengaluru", status: "completed" },
+    { team1: "Delhi Capitals", team2: "Kolkata Knight Riders", winner: "Kolkata Knight Riders", status: "completed" },
+    { team1: "Gujarat Titans", team2: "Punjab Kings", winner: "Punjab Kings", status: "completed" },
+    { team1: "Sunrisers Hyderabad", team2: "Chennai Super Kings", winner: "Sunrisers Hyderabad", status: "completed" },
+    { team1: "Rajasthan Royals", team2: "Royal Challengers Bengaluru", winner: "Rajasthan Royals", status: "completed" },
+    { team1: "Mumbai Indians", team2: "Delhi Capitals", winner: "Mumbai Indians", status: "completed" }
 ];
 
 app.get('/api/matches', async (req, res) => {
@@ -54,29 +68,44 @@ app.get('/api/matches', async (req, res) => {
             }
         });
 
-        // Filter valid teams
+        // Filter and Normalize valid teams
         const validTeamsList = [
             "Chennai Super Kings", "Delhi Capitals", "Gujarat Titans", 
             "Kolkata Knight Riders", "Lucknow Super Giants", "Mumbai Indians", 
             "Punjab Kings", "Rajasthan Royals", "Royal Challengers Bengaluru", "Sunrisers Hyderabad"
         ];
         
-        liveMatches = liveMatches.filter(m => 
+        function normalizeTeam(rawName) {
+            if (!rawName) return "";
+            if (rawName.includes("Bangalore") || rawName.includes("Bengaluru")) return "Royal Challengers Bengaluru";
+            if (rawName.includes("Kings XI")) return "Punjab Kings";
+            
+            // Fuzzy match the rest
+            const match = validTeamsList.find(t => rawName.includes(t) || t.includes(rawName));
+            return match || rawName;
+        }
+
+        liveMatches = liveMatches.map(m => ({
+            ...m,
+            team1: normalizeTeam(m.team1),
+            team2: normalizeTeam(m.team2),
+            winner: m.winner !== "None" ? normalizeTeam(m.winner) : "None"
+        })).filter(m => 
             validTeamsList.includes(m.team1) && validTeamsList.includes(m.team2)
         );
 
         if (liveMatches.length > 0) {
             console.log("Successfully scraped Wikipedia! Matches found:", liveMatches.length);
             // Reverse so latest matches are first
-            return res.json({ source: 'live_wikipedia', matches: liveMatches.reverse().slice(0, 15) });
+            return res.json({ source: 'live_wikipedia', matches: liveMatches.reverse() });
         } else {
             console.log("Wikipedia parsers missed, falling back to mock.");
-            return res.json({ source: 'mock', matches: mockMatches });
+            return res.json({ source: 'mock', matches: [...mockMatches].reverse() });
         }
 
     } catch (error) {
         console.error("Live fetch failed:", error.message);
-        res.json({ source: 'mock', matches: mockMatches });
+        res.json({ source: 'mock', matches: [...mockMatches].reverse() });
     }
 });
 

@@ -1,3 +1,5 @@
+import Chart from 'chart.js/auto';
+
 const matchesBody = document.getElementById('matches-body');
 const breakdownList = document.getElementById('breakdown-list');
 const leaderboardList = document.getElementById('leaderboard-list');
@@ -47,6 +49,15 @@ async function fetchInitialData(isManualSync = false) {
         
         defaultTeams = teamsResult.teams || [];
         currentMatches = matchesResult.matches || [];
+        
+        // Update Tournament Progress Box
+        const matchesDoneEl = document.getElementById('matches-done');
+        const matchesRemEl = document.getElementById('matches-remaining');
+        if (matchesDoneEl && matchesRemEl) {
+            matchesDoneEl.textContent = currentMatches.length;
+            const remaining = Math.max(0, 74 - currentMatches.length);
+            matchesRemEl.textContent = `(${remaining} Remaining)`;
+        }
         
         loadPlayers();
 
@@ -113,6 +124,7 @@ function loadPlayers() {
     renderLeaderboard();
     renderBreakdown(); 
     renderAllSquads();
+    renderChart();
 }
 
 function calculateAllScores() {
@@ -176,7 +188,11 @@ function renderAllSquads() {
         div.style.borderRadius = '8px';
         div.style.border = '1px solid var(--glass-border)';
         
-        const acronyms = p.rankings.map(name => getAcronym(name)).join(', ');
+        const acronyms = p.rankings.map((name, i) => {
+            let pts = pointsMapping[i];
+            let sign = pts > 0 ? '+' : '';
+            return `<span style="display:inline-block; margin-right:0.8rem;">${getAcronym(name)} <span style="color:${pts > 0 ? '#20c997' : '#ff6b6b'}; font-size:0.85em;">(${sign}${pts})</span></span>`;
+        }).join('');
         const updatedStr = p.lastUpdatedAt ? new Date(p.lastUpdatedAt).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : 'Prior to tracking';
         
         div.innerHTML = `
@@ -214,8 +230,9 @@ function renderBreakdown() {
     let runningTotals = {};
     players.forEach(p => runningTotals[p.id] = p.score);
     
-    let rowsHtml = currentMatches.map(match => {
-        let matchLabel = match.team1 + ' vs ' + match.team2;
+    let rowsHtml = currentMatches.map((match, mIndex) => {
+        const matchIndex = currentMatches.length - mIndex;
+        let matchLabel = `<strong style="color:var(--text-main);">Match ${matchIndex}</strong><br>` + match.team1 + ' vs ' + match.team2;
         let winnerLabel = match.status === 'no_result' ? '<span style="color:#4db8ff">Rain (Max Pts)</span>' : `<span style="color:#20c997">${match.winner}</span>`;
         
         let playerScoresHtml = players.map(player => {
@@ -268,6 +285,104 @@ function renderBreakdown() {
     `;
 
     breakdownList.innerHTML = tableHtml;
+}
+
+let scoreChartInstance = null;
+
+function renderChart() {
+    const ctx = document.getElementById('scoreChart');
+    if (!ctx || players.length === 0 || currentMatches.length === 0) return;
+
+    // We must iterate FORWARD in time to plot
+    // currentMatches is ordered Newest to Oldest. So we reverse a clone to process oldest to newest.
+    const forwardMatches = [...currentMatches].reverse();
+    
+    // Labels are just 'Start', 'Match 1', 'Match 2', etc.
+    const labels = ['Start'];
+    forwardMatches.forEach((m, idx) => labels.push(`M${idx + 1}`));
+
+    // Colors roughly tailored for distinction
+    const colors = ['rgba(32, 201, 151, 1)', '#4db8ff', '#ffd43b', '#ff6b6b'];
+
+    const datasets = players.map((p, pIndex) => {
+        let runningTotal = 0;
+        const dataPoints = [0]; // starts at zero before match 1
+        
+        forwardMatches.forEach(match => {
+            let pts = 0;
+            if (match.status === 'completed' && match.winner !== 'None') {
+                const wIdx = p.rankings.indexOf(match.winner);
+                if(wIdx !== -1) pts = pointsMapping[wIdx];
+            } else if (match.status === 'no_result') {
+                const i1 = p.rankings.indexOf(match.team1);
+                const i2 = p.rankings.indexOf(match.team2);
+                let p1 = i1 !== -1 ? pointsMapping[i1] : -99;
+                let p2 = i2 !== -1 ? pointsMapping[i2] : -99;
+                pts = Math.max(p1, p2);
+            }
+            runningTotal += pts;
+            dataPoints.push(runningTotal);
+        });
+        
+        return {
+            label: p.name,
+            data: dataPoints,
+            borderColor: colors[pIndex % colors.length],
+            backgroundColor: colors[pIndex % colors.length],
+            borderWidth: 2,
+            tension: 0.3,
+            pointRadius: 4,
+            pointHoverRadius: 6
+        };
+    });
+
+    if (scoreChartInstance) {
+        scoreChartInstance.destroy();
+    }
+
+    Chart.defaults.color = '#a1a3b5';
+
+    scoreChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                tooltip: {
+                    backgroundColor: 'rgba(23,25,35,0.9)',
+                    titleColor: '#fff',
+                    bodyColor: '#e2e8f0',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1,
+                    padding: 10,
+                    boxPadding: 4,
+                    usePointStyle: true,
+                },
+                legend: {
+                    position: 'top',
+                    labels: { color: '#e2e8f0', usePointStyle: true, padding: 20 }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                    ticks: { maxRotation: 45, minRotation: 45 }
+                },
+                y: {
+                    grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                    title: { display: true, text: 'Total Points', color: '#6b6f84' }
+                }
+            }
+        }
+    });
 }
 
 const syncBtn = document.getElementById('sync-results-btn');
